@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta  content="text/html; charset=UTF-8" />    
+</head>
+
+<body>
+	<mat-dialog-content style="min-height: 100%;
+    height: auto;
+    height: 100%;
+    margin: 0 auto -20px;">
+	<h1>{{ 'DetailsOfStation' | translate }}: {{name}} </h1>
+	<mat-card style="float: right; size: auto;">
+		<p style="text-align: center;"><b>{{ 'Percentage of days without data' | translate }} </b>
+			<mat-progress-spinner style="margin:0 auto;"
+        		class="example-margin"
+      	  	  	color="blue"
+         		mode="determinate"
+        		[value]="missingNumber">
+   			</mat-progress-spinner>
+   		<div style ="text-align: center;">{{missingNumber}} </div>
+  	</mat-card>
+  	<mat-list>
+  		<mat-divider></mat-divider>
+		<mat-list-item><b>{{ 'Code' | translate }}:&nbsp;</b>{{code}},&nbsp;<b>{{ 'Provider' | translate }}:&nbsp;</b>{{provider}}</mat-list-item>
+		<mat-divider></mat-divider>
+		<mat-list-item><b>{{ 'Coordinates' | translate }}:&nbsp;</b>{{ 'Latitude' | translate }}: {{latitude}}, {{ 'Longitude' | translate }}: {{longitude}}, {{ 'Altitude' | translate }}: {{altitude}} </mat-list-item>
+   		<mat-divider></mat-divider>	
+   		<mat-list-item>	
+		<mat-chip-list>
+			<b>{{ 'Values collected' | translate }}: </b>&nbsp; 
+  			<mat-chip selected="true" [ngStyle]="{'backgroundColor': colorTempMax === '0' ? '#ff0000' : '#009933' }">{{ 'Maximum Temperature' | translate }}</mat-chip>
+  			<mat-chip selected="true" [ngStyle]="{'backgroundColor': colorTempMean === '0' ? '#ff0000' : '#009933' }">{{ 'Mean Temperature' | translate }}</mat-chip>
+  			<mat-chip selected="true" [ngStyle]="{'backgroundColor': colorTempMin === '0' ? '#ff0000' : '#009933' }">{{ 'Minimum Temperature' | translate }}</mat-chip>
+  			<mat-chip selected="true" [ngStyle]="{'backgroundColor': colorPr === '0' ? '#ff0000' : '#009933' }">{{ 'Precipitation' | translate }}</mat-chip>
+		</mat-chip-list>
+  		</mat-list-item>
+  		<mat-divider></mat-divider>	
+  		<mat-list-item>	<b>{{ 'ValuesAvailable' | translate }}&nbsp;</b>{{startDate}} <b>&nbsp;{{ 'and' | translate }}&nbsp;</b>{{endDate}}</mat-list-item> 
+  		<mat-divider></mat-divider>	
+  	<mat-list-item>	
+	<form id="formDates" #dataForm="ngForm" >
+	{{ 'Introduce dates' | translate }} 
+  			<input type="date" name="dateIni" id="dateIni" min="1950-01-01" max="2015-12-31" (change)="makeHistogram(dataForm)" ngModel>
+  		{{ 'and' | translate }} 
+  			<input type="date"  name="dateEnd"   min="1950-01-01" max="2015-12-31" id="dateEnd" (change)="makeHistogram(dataForm)" ngModel>
+  	 {{ 'to visualize graphics' | translate }} 
+  	 
+	</form>
+	</mat-list-item> 
+	<mat-divider></mat-divider>	
+	</mat-list>
+	<mat-tab-group  (selectedTabChange)="mainTabChange($event)">  <!-- options tab -->
+  		<mat-tab  label="{{ 'Histogram' | translate }}">
+    		<div id="montlyHistogram" style= "width:100%;">
+  			<!-- Histogram will appear here -->
+			</div>
+  		</mat-tab>
+  		
+        			
+    			
+  		<mat-tab label="{{ 'AnualGraphic' | translate }}" >
+  			<!-- Month selector -->
+  			<div class="tab-content">  
+    			
+        			<ng-select [items]="arrayMonthAndYear"
+                  		bindLabel="name"
+                   		bindValue="engName"
+                   		[multiple]="true"
+                   		placeholder="{{ 'Select months' | translate }}"
+                   		 appendTo="body"
+                   		[(ngModel)]="selectedMonthNames"
+                   		(change)="makeMonthlyDataGrafic()">
+        			</ng-select>
+        		
+         	</div>
+        	<div id="yearlyHistogram" style= "width:100%;">
+  				<!-- anual graph will appear here -->
+			</div>
+  		</mat-tab>
+  		<mat-tab  label="{{ 'StatsData' | translate }}"> <!-- tab for statistics values -->
+  			<div class="tab-content">  
+    			<mat-tab-group (selectedTabChange)="secondaryTabChange($event)">
+      			<mat-tab label="{{ 'Monthly' | translate }}"> <!-- mensual tab, form for values required and for months -->
+      				<div class="tab-content">  
+    					
+        			<ng-select [items]="monthSelectorArray"
+                  		bindLabel="name"
+                   		bindValue="engName"
+                   		placeholder="{{ 'Select month' | translate }}"
+                   		 appendTo="body"
+                   		[(ngModel)]="selectedMonth"
+                   		(change)="makeTableOfSelectedMonth()">
+        			</ng-select>
+
+        			<mat-tab-group (selectedTabChange)="changeMonthlyTab($event)">
+        				<mat-tab label="{{ 'Maximum Temperature' | translate }}" > <!--  Pestaña para la temp maxima -->
+        					<div class="spinner-container">
+								<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        					</div>
+        					
+        					<app-tablestats [maximumTableValues]="monthlyTableMaximumValues" [minimumTableValues]="monthlyTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>  
+        				</mat-tab>
+        			
+        				<mat-tab label="{{ 'Mean Temperature' | translate }}">  <!--  Pestaña para la temp media -->
+        					<div class="spinner-container">
+								<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        					</div>
+        					<br>
+        					<app-tablestats [maximumTableValues]="monthlyTableMaximumValues" [minimumTableValues]="monthlyTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        				</mat-tab>
+        				
+        				<mat-tab label="{{ 'Minimum Temperature' | translate }}">   		<!--  Pestaña para la temp minima -->	
+        					<div class="spinner-container">
+								<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        					</div>
+        					<br>
+        					<app-tablestats [maximumTableValues]="monthlyTableMaximumValues" [minimumTableValues]="monthlyTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>		
+        				</mat-tab>
+        				
+        				<mat-tab label="{{ 'Precipitation' | translate }}"><!--  Pestaña para la precipitacion -->
+        					<div class="spinner-container">
+								<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        					</div>
+        					<br>
+        					<app-tablestats [maximumTableValues]="monthlyTableMaximumValues" [minimumTableValues]="monthlyTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>			
+        				</mat-tab>
+        			</mat-tab-group>
+        			
+         			</div>
+      			</mat-tab> <!-- End monthly section -->
+      		
+      		    <mat-tab label="{{ 'seasonal' | translate }}"><!-- Season section -->
+					<div class="tab-content">  
+        				<ng-select [items]="seasonsSelectorArray"
+                  			bindLabel="name"
+                   			bindValue="id"
+                   			appendTo="body"
+                   			placeholder="Select season"
+                   			[(ngModel)]="selectedSeason"
+                   			(change)="makeTableOfSelectedSeason()">
+        				</ng-select>
+        				<mat-tab-group (selectedTabChange)="changeSeasonTab($event)">
+        					<mat-tab label="{{ 'Maximum Temperature' | translate }}"> <!--  Pestaña para la temp maxima -->
+        						<div class="spinner-container">
+									<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        						</div>
+        						<br>
+        						<app-tablestats [maximumTableValues]="seasonTableMaximumValues" [minimumTableValues]="seasonTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        					</mat-tab>
+        					
+        					<mat-tab label="{{ 'Mean Temperature' | translate }}">  <!--  Pestaña para la temp minima -->
+        						<div class="spinner-container">
+									<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        						</div>
+        						<app-tablestats [maximumTableValues]="seasonTableMaximumValues" [minimumTableValues]="seasonTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        					</mat-tab>
+        			
+        					<mat-tab label="{{ 'Minimum Temperature' | translate }}">
+        						<div class="spinner-container">
+									<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        						</div>
+        						<app-tablestats [maximumTableValues]="seasonTableMaximumValues" [minimumTableValues]="seasonTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+
+        					</mat-tab>
+        					
+        					<mat-tab label="{{ 'Precipitation' | translate }}">
+        						<div class="spinner-container">
+									<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        						</div>
+        						<app-tablestats [maximumTableValues]="seasonTableMaximumValues" [minimumTableValues]="seasonTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        					</mat-tab>
+        				</mat-tab-group>
+        				 			       			
+					</div>
+    		   	</mat-tab>
+    		  	
+    		  	<mat-tab label="{{ 'TotalVals' | translate }}"><!-- Total values tab -->
+					<mat-tab-group (selectedTabChange)="changeTotalTab($event)">
+        				
+        				<mat-tab label="{{ 'Maximum Temperature' | translate }}"> <!--  Pestaña para la temp maxima -->
+        					<div class="spinner-container">
+								<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        					</div>
+        						<app-tablestats [maximumTableValues]="totalTableMaximumValues" [minimumTableValues]="totalTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        				</mat-tab>
+        			
+        				<mat-tab label="{{ 'Mean Temperature' | translate }}">  <!--  Pestaña para la temp minima -->
+        					<div class="spinner-container">
+								<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        					</div>
+        						<app-tablestats [maximumTableValues]="totalTableMaximumValues" [minimumTableValues]="totalTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        				</mat-tab>
+        				
+        				<mat-tab label="{{ 'Minimum Temperature' | translate }}">
+        					<div class="spinner-container">
+								<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        					</div>
+        						<app-tablestats [maximumTableValues]="totalTableMaximumValues" [minimumTableValues]="totalTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        				</mat-tab>
+        			
+        				<mat-tab label="{{ 'Precipitation' | translate }}">
+        					<div class="spinner-container">
+								<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        					</div>
+        						<app-tablestats [maximumTableValues]="totalTableMaximumValues" [minimumTableValues]="totalTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        				</mat-tab>
+        			</mat-tab-group>
+    		  	</mat-tab>
+    		  	
+    		  	<mat-tab label="{{ 'AnualVals' | translate }}">
+ 					{{ 'Enter' | translate }}: {{ 'Year' | translate }} 
+ 					{{years}}
+ 					
+ 					
+    				<select [(ngModel)]="selectedYear" (ngModelChange)="getYearTable()">
+      					<option *ngFor="let year of years" [ngValue]="year">{{year}}</option>
+    				</select>	
+    					
+ 				<mat-tab-group (selectedTabChange)="changeYearTab($event)">
+        			
+        			<mat-tab label="{{ 'Maximum Temperature' | translate }}"> <!--  Pestaña para la temp maxima -->
+        				<div class="spinner-container">
+							<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        				</div>
+        						<app-tablestats [maximumTableValues]="yearTableMaximumValues" [minimumTableValues]="yearTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        			</mat-tab>
+        			
+        			<mat-tab label="{{ 'Mean Temperature' | translate }}">  <!--  Pestaña para la temp minima -->
+        				<div class="spinner-container">
+							<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        				</div>
+        						<app-tablestats [maximumTableValues]="yearTableMaximumValues" [minimumTableValues]="yearTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        			</mat-tab>
+        			
+        			<mat-tab label="{{ 'Minimum Temperature' | translate }}">
+        				<div class="spinner-container">
+							<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        				</div>
+        						<app-tablestats [maximumTableValues]="yearTableMaximumValues" [minimumTableValues]="yearTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        			</mat-tab>
+        			
+        			<mat-tab label="{{ 'Precipitation' | translate }}">
+        				<div class="spinner-container">
+							<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        				</div>
+        						<app-tablestats [maximumTableValues]="yearTableMaximumValues" [minimumTableValues]="yearTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+	        			</mat-tab>
+        			</mat-tab-group>
+    		  	</mat-tab>
+    		  	
+    		  	<mat-tab label="{{ 'DailyVals' | translate }}"> <!-- Daily tab --> 	    
+    		  	    {{ 'Enter' | translate }}: {{ 'Month' | translate }} 
+    				<select [(ngModel)]="selectedMonth" (ngModelChange)="getDailyTable()">
+      					<option *ngFor="let month of monthSelectorArray" [ngValue]="month">{{month.name}}</option>
+    				</select>
+    			    {{ 'and' | translate }} {{ 'day' | translate }}: 
+    			    <select id="daysOfMonth" disabled={{disabled}}  [(ngModel)]="selectedDay" (ngModelChange)="getDailyTable()" > 
+      					<option *ngFor="let day of daysOfMonth" [ngValue]="day">{{day}}</option>
+    				</select>   
+    				<br>
+    				<!-- table -->
+    			<mat-tab-group (selectedTabChange)="changeDailyTab($event)">
+        			<mat-tab label="{{ 'Maximum Temperature' | translate }}"> <!--  Pestaña para la temp maxima -->
+        				<div class="spinner-container">
+							<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        				</div>
+        						<app-tablestats [maximumTableValues]="dailyTableMaximumValues" [minimumTableValues]="dailyTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        			</mat-tab>
+        			
+        			<mat-tab label="{{ 'Mean Temperature' | translate }}">  <!--  Pestaña para la temp minima -->
+        			<div class="spinner-container">
+						<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        			</div>
+        						<app-tablestats [maximumTableValues]="dailyTableMaximumValues" [minimumTableValues]="dailyTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        			</mat-tab>
+        			
+        			<mat-tab label="{{ 'Minimum Temperature' | translate }}">
+        				<div class="spinner-container">
+							<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        				</div>	
+        						<app-tablestats [maximumTableValues]="dailyTableMaximumValues" [minimumTableValues]="dailyTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        			</mat-tab>
+        			
+        			<mat-tab label="{{ 'Precipitation' | translate }}">
+        				<div class="spinner-container">
+							<mat-spinner [style.display]="loadingSpinner ? 'block' : 'none'"  style="margin:0 auto;" diameter = "300"></mat-spinner>
+        				</div>
+        						<app-tablestats [maximumTableValues]="dailyTableMaximumValues" [minimumTableValues]="dailyTableMinimumValues" [style.display]="loadingTable === false ? 'block' : 'none'"></app-tablestats>
+        			</mat-tab>
+        		</mat-tab-group>
+    		  	</mat-tab>
+    		</mat-tab-group>	
+        </div>
+  		</mat-tab>
+	</mat-tab-group>
+	</mat-dialog-content>
+</body>
+</html>

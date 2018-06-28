@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+	<head profile="http://gmpg.org/xfn/11">
+     	  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />    
+    </head>
+
+    <body>
+    
+    <div class="header">
+               <a href="#default" class="logo">{{ 'MeteoMap' | translate }}</a>
+               <div class="header-right">
+                    <a class="active" href="#home">{{ 'Home' | translate }}</a>
+                    
+                    <div class="dropdown">
+                    	<a href="#lenguage" >{{ 'Language' | translate }}</a>
+                    	<div class="dropdown-content">
+    						<a href="#" (click)="onclickEsp();">{{ 'Spanish' | translate }}</a>
+    						<a href="#" (click)="onclickEng();">{{ 'English' | translate }}</a>
+  						</div>
+                    </div>
+                    <a href="#about">{{ 'About' | translate }}</a>
+               </div>
+    </div>
+    <!-- Formulario -->
+    <div class="form">
+         <form #dataForm="ngForm" (ngSubmit)="onSubmit(dataForm)">
+               <label for="variable" ></label>
+ 	           <select name="variable" ngModel>
+ 	                   <option value="" disabled selected>Variable</option>
+  		               <option value="TEMPERATURE_MAX">{{ 'Maximum Temperature' | translate }}</option>
+  		               <option value="TEMPERATURE_MIN">{{ 'Minimum Temperature' | translate }}</option>
+  		               <option value="TEMPERATURE_MEAN">{{ 'Mean Temperature' | translate }}</option>
+  		               <option value="PRECIPITATION">{{ 'Precipitation' | translate }}</option>
+	           </select>
+               <label for="date" ></label>  
+  	           <input type="date" name="date" id="date" min="1950-01-01" max="2015-12-31" ngModel>
+               <label for="range"></label>
+	                  <select name="period" ngModel>
+	                  		<option value="" disabled selected>{{ 'Period' | translate }}</option>
+  		              		<option value="daily">{{ 'Daily' | translate }}</option>
+  		              		<option disabled value="weekly">{{ 'Weekly' | translate }}</option>
+  		              		<option disabled value="monthly">{{ 'Monthly' | translate }}</option>
+  					  		<option disabled value="yearly">{{ 'Yearly' | translate }}</option>
+					  </select>
+  				<input type="submit" value = "{{ 'Search' | translate }}">
+		</form>
+		
+	</div>
+	<!-- Mapa -->
+	
+	<div id="map" style="width: 100%; 
+    					 height: 100%; 
+    					 position: fixed; " margin-zero>
+    					 <ng4-loading-spinner [threshold]='0'> </ng4-loading-spinner>
+    </div>
+    <div id="scale" [style.display]="variable != null ? 'block' : 'none'">
+    	<div>   
+    		<span style=" font-size: 100%;  float: left; text-align:left; width:33.33333%;">{{scaleNum1}}</span>	
+    		<span style=" font-size: 100%;  float: left; text-align:center; width:33.33333%;">{{scaleNum3}}</span>
+    		<span style=" font-size: 100%; float: left; text-align:right; width:33.33333%;">{{scaleNum5}}</span>  	
+    	</div>
+		<div style="width: 100%;display: inline-block;" [ngStyle]="{'background':variable === 'pr' ? 'linear-gradient(to right, #FFFFFF, #90EE90, #009FFF, #6666FF,#1306FF, #9123FF,
+                                #6E00DB, #5E00A6, #410059)' : 'linear-gradient(to right, #2E2E73, #282898, #201FBB, #1A1ADC, #3654DE, #548EDC,
+                                #72CADE, #6DD8DF, #55CDE2, #38BBDC, #20B0DC, #19BAA6, #1CCE6A,
+                                #1BDF22, #82C319, #DCA819, #DD921A, #DE7C1A, #DF671A,
+                                #DE501A, #DD3819, #DD2319, #D21A1E, #C31927, #AD1A30, #9A1A3B, #871A44, #871A44)'}">                               
+     	&nbsp;
+    	</div>
+    </div>
+    
+    <!--
+     <div id="scale" [style.display]="variable != null ? 'block' : 'none'">
+    <div>   
+    	<span style=" margin-left: 0%;">6</span>
+    	<span style=" margin-rigth: 25%;">6</span>
+    	<span style="margin-rigth: 0%;">25</span></div>
+	<div [ngStyle]="{'background':variable === 'pr' ? 'linear-gradient(to right, #FFFFFF, #90EE90, #009FFF, #6666FF,#1306FF, #9123FF,
+                                #6E00DB, #5E00A6, #410059)' : 'linear-gradient(to right, #2E2E73, #282898, #201FBB, #1A1ADC, #3654DE, #548EDC,
+                                #72CADE, #6DD8DF, #55CDE2, #38BBDC, #20B0DC, #19BAA6, #1CCE6A,
+                                #1BDF22, #82C319, #DCA819, #DD921A, #DE7C1A, #DF671A,
+                                #DE501A, #DD3819, #DD2319, #D21A1E, #C31927, #AD1A30, #9A1A3B, #871A44, #871A44)'}"> 
+                                
+     &nbsp;
+    </div>
+    </div>
+     <div id="scale" [style.display]="variable != null ? 'block' : 'none'">
+    <div>   
+    	<span style=" float: left; width: 33.33%;">6</span>
+    	<span style=" float: left; width: 33.33%;">6</span>
+    	<span style=" float: left; width: 33.33%;">25</span>
+    </div>
+	<div [ngStyle]="{'background':variable === 'pr' ? 'linear-gradient(to right, #FFFFFF, #90EE90, #009FFF, #6666FF,#1306FF, #9123FF,
+                                #6E00DB, #5E00A6, #410059)' : 'linear-gradient(to right, #2E2E73, #282898, #201FBB, #1A1ADC, #3654DE, #548EDC,
+                                #72CADE, #6DD8DF, #55CDE2, #38BBDC, #20B0DC, #19BAA6, #1CCE6A,
+                                #1BDF22, #82C319, #DCA819, #DD921A, #DE7C1A, #DF671A,
+                                #DE501A, #DD3819, #DD2319, #D21A1E, #C31927, #AD1A30, #9A1A3B, #871A44, #871A44)'}"> 
+                                
+     &nbsp;
+    </div>
+    </div> -->
+    
+    
+	<div class="footer">
+	
+  		<p>FOOTER</p>
+	</div>
+	</body>
+</html>
